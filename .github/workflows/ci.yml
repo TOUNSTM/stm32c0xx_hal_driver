@@ -1,0 +1,52 @@
+# This workflow defines a couple of jobs to run in the frame of the automatic
+# continuous integration (ACI)
+
+name: compilation
+
+# Controls when the action will run. Triggers the workflow on push events
+on: [push]
+
+# A workflow is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    name: Compilation
+    steps:
+      # Clone the "cmsis_core" repository using the "checkout" GH action.
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          repository: STMicroelectronics/cmsis_core
+          path: ./Drivers/CMSIS
+      # Clone the "cmsis_device" repository using the "checkout" GH action.
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          repository: STMicroelectronics/cmsis_device_c0
+          path: ./Drivers/CMSIS/Device/ST/STM32C0xx
+      # Clone the "hal_driver" repository using the "checkout" GH action.
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          repository: STMicroelectronics/stm32c0xx_hal_driver
+          path: ./Drivers/STM32C0xx_HAL_Driver
+      # Clone the "actions" repository using the "checkout" GH action.
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          repository: ALABSTM/actions
+          path: .github/actions
+          # token: ${{ secrets.ACTIONS_SECRET }}
+      # Compile the source files using the "compile" user-defined action.
+      - name: Compile
+        id: compile
+        uses: ./.github/actions/compile
+        with:
+          stm32-series: 'C0'
+          option-list: '-mcpu=cortex-m0plus -mfloat-abi=soft'
+      # Log compilation result using the output from the "compile" step.
+      - name: Log
+        if: failure()
+        run: |
+          cat ${{ steps.compile.outputs.compile-result }}
+          exit 1
